@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Content Calendar System</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #121212;
+      color: #eee;
+      margin: 0;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    h1 {
+      text-align: center;
+      color: #ffcc00;
+      margin-bottom: 0;
+      font-weight: 900;
+      letter-spacing: 2px;
+      user-select: none;
+    }
+
+    #calendar {
+      max-width: 900px;
+      width: 100%;
+      background: #1f1f1f;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 0 15px #ffcc00aa;
+      cursor: pointer;
+    }
+
+    #upload-form {
+      max-width: 600px;
+      width: 100%;
+      background: #1f1f1f;
+      padding: 1.5rem 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 15px #ffcc00aa;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      color: #eee;
+      user-select: none;
+    }
+
+    #upload-form h2 {
+      margin: 0 0 0.5rem 0;
+      color: #ffcc00;
+    }
+
+    #upload-form input,
+    #upload-form button {
+      padding: 0.7rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+
+    #upload-form input[type='file'] {
+      cursor: pointer;
+      background: #2a2a2a;
+      color: #ddd;
+    }
+
+    #upload-form input[type='date'],
+    #upload-form input[type='text'] {
+      background: #2a2a2a;
+      color: #ddd;
+    }
+
+    #upload-form button {
+      background: #ffcc00;
+      color: #121212;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
+
+    #upload-form button:hover {
+      background: #e6b800;
+    }
+
+    .gallery {
+      max-width: 1000px;
+      width: 100%;
+      margin: 2rem auto 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+      user-select: none;
+    }
+
+    .gallery img {
+      width: 100%;
+      max-width: 200px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+      box-shadow: 0 0 8px #ffcc00aa;
+    }
+
+    .gallery img:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px #ffcc00ff;
+    }
+
+    .fullscreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(18, 18, 18, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 1rem;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .fullscreen > div {
+      max-width: 600px;
+      width: 90vw;
+      text-align: center;
+      color: #eee;
+      font-size: 1rem;
+      user-select: text;
+    }
+
+    .fullscreen img {
+      max-width: 100%;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      box-shadow: 0 0 15px #ffcc00cc;
+    }
+
+    .fullscreen textarea {
+      width: 100%;
+      border-radius: 8px;
+      border: none;
+      resize: vertical;
+      min-height: 80px;
+      padding: 0.75rem;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      background: #2a2a2a;
+      color: #eee;
+    }
+
+    .fullscreen button {
+      background: #ffcc00;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1.5rem;
+      font-weight: 700;
+      color: #121212;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-top: 0.25rem;
+      user-select: none;
+    }
+
+    .fullscreen button:hover {
+      background: #e6b800;
+    }
+
+    .no-poster-message {
+      color: #ff5555;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <h1>📅 Content Calendar System</h1>
+  <div id="calendar"></div>
+
+  <form id="upload-form">
+    <h2>📤 Upload Poster</h2>
+    <input type="file" id="file" accept="image/*" required />
+    <input type="date" id="date" required />
+    <input type="text" id="caption" placeholder="Caption (optional)" maxlength="100" />
+    <button type="submit">Upload</button>
+  </form>
+
+  <div class="gallery" id="gallery"></div>
+
+  <div class="fullscreen" id="fullscreen">
+    <img src="" alt="Full View" style="max-width: 90%; max-height: 90%;" />
+  </div>
+
+  <script>
+    const calendarEl = document.getElementById('calendar');
+    const galleryEl = document.getElementById('gallery');
+    const fullscreen = document.getElementById('fullscreen');
+    const fullImg = fullscreen.querySelector('img');
+
+    let postersByDate = {};
+
+    // Initialize FullCalendar
+    document.addEventListener('DOMContentLoaded', function () {
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: [],
+        dateClick: function (info) {
+          const dateStr = info.dateStr;
+          if (postersByDate[dateStr]) {
+            showPosterPopup(dateStr, postersByDate[dateStr]);
+          } else {
+            showNoPosterMessage(dateStr);
+          }
+        }
+      });
+      calendar.render();
+
+      // Handle upload form submission
+      document.getElementById('upload-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const fileInput = document.getElementById('file');
+        const dateInput = document.getElementById('date');
+        const captionInput = document.getElementById('caption');
+
+        const file = fileInput.files[0];
+        if (!file || !dateInput.value) {
+          alert('Yo, gotta pick a file and a date first!');
+          return;
+        }
+
+        const dateStr = dateInput.value;
+        const caption = captionInput.value.trim();
+
+        const url = URL.createObjectURL(file);
+
+        // Create image for gallery
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = caption || 'Poster Image';
+        img.title = caption || dateStr;
+
+        img.addEventListener('click', () => {
+          showPosterPopup(dateStr, { url, caption });
+        });
+
+        galleryEl.appendChild(img);
+
+        // Add to postersByDate for calendar clicks
+        postersByDate[dateStr] = { url, caption };
+
+        // Add event to calendar
+        calendar.addEvent({
+          title: caption || file.name,
+          start: dateStr
+        });
+
+        // Reset form
+        fileInput.value = '';
+        dateInput.value = '';
+        captionInput.value = '';
+      });
+    });
+
+    // Show poster popup with correction form
+    function showPosterPopup(dateStr, poster) {
+      fullscreen.innerHTML = `
+        <div>
+          <h2>Hey! Here’s the poster for <span style="color:#ffcc00;">${dateStr}</span> 🎉</h2>
+          <img src="${poster.url}" alt="Poster" />
+          <p style="font-style: italic; margin-bottom: 1rem;">${poster.caption || "No caption, but vibes are good."}</p>
+          <form id="correctionForm">
+            <label for="correctionInput" style="display:block; margin-bottom: 0.5rem;">Got a correction or suggestion? Hit me up below 👇</label>
+            <textarea id="correctionInput" rows="3" placeholder="Type your correction here..." required></textarea>
+            <button type="submit">Send via WhatsApp</button>
+          </form>
+          <button id="closeFullScreen" style="margin-top:1rem;">Close</button>
+        </div>
+      `;
+
+      document.getElementById('closeFullScreen').addEventListener('click', () => {
+        fullscreen.style.display = 'none';
+        fullscreen.innerHTML = `<img src="" alt="Full View" style="max-width:90%; max-height:90%;">`;
+      });
+
+      document.getElementById('correctionForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const correctionText = document.getElementById('correctionInput').value.trim();
+        if (!correctionText) {
+          alert('Yo, gotta write something before sending!');
+          return;
+        }
+        // Your WhatsApp number (international format, no plus sign)
+        const whatsappNumber = '254700123456'; // <---- Swap with your actual number
+
+        // Encode message for WhatsApp
+        const message = encodeURIComponent(`Correction for poster on ${dateStr}:\n"${correctionText}"`);
+
+        // Open WhatsApp chat with pre-filled message
+        window.open(`https://wa.me/${whatsappNumber}?text=${message}`, '_blank');
+      });
+
+      fullscreen.style.display = 'flex';
+    }
+
+    // Show message if no poster on date clicked
+    function showNoPosterMessage(dateStr) {
+      fullscreen.innerHTML = `
+        <div>
+          <h2 class="no-poster-message">Oops! No poster for <span style="color:#ff5555;">${dateStr}</span> yet 😢</h2>
+          <p>Feel free to upload one if you got it! 💪</p>
+          <button id="closeFullScreen" style="margin-top:1rem;">Close</button>
+        </div>
+      `;
+
+      document.getElementById('closeFullScreen').addEventListener('click', () => {
+        fullscreen.style.display = 'none';
+        fullscreen.innerHTML = `<img src="" alt="Full View" style="max-width:90%; max-height:90%;">`;
+      });
+
+      fullscreen.style.display = 'flex';
+    }
+  </script>
+</body>
+</html>

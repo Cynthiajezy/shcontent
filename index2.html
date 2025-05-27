@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Content Calendar System</title>
+  <style>
+    /* Reset & base */
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #d6e7f5;
+      color: #333;
+      padding-top: 60px; /* space for fixed nav */
+    }
+
+    /* Background slideshow */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: url('https://picsum.photos/id/1015/1920/1080') no-repeat center center/cover;
+      opacity: 0.15;
+      z-index: -1;
+      animation: slide 15s infinite;
+    }
+    @keyframes slide {
+      0% { background-image: url('https://picsum.photos/id/1015/1920/1080'); }
+      33% { background-image: url('https://picsum.photos/id/1016/1920/1080'); }
+      66% { background-image: url('https://picsum.photos/id/1018/1920/1080'); }
+      100% { background-image: url('https://picsum.photos/id/1015/1920/1080'); }
+    }
+
+    /* NAV BAR */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #a3c2f2; /* pastel blue */
+      height: 60px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 1000;
+    }
+    nav .logo {
+      font-weight: 900;
+      font-size: 1.5rem;
+      color: #fff;
+      user-select: none;
+      cursor: default;
+      flex-shrink: 0;
+    }
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 1.5rem;
+      margin-left: 40px;
+      padding: 0;
+      flex-grow: 1;
+    }
+    nav ul li {
+      cursor: pointer;
+      color: #fff;
+      font-weight: 600;
+      transition: color 0.3s;
+    }
+    nav ul li:hover {
+      color: #073763;
+    }
+    nav .back-btn {
+      color: #fff;
+      cursor: pointer;
+      font-size: 1.2rem;
+      user-select: none;
+      margin-left: auto;
+      padding: 0 10px;
+      background: #073763;
+      border-radius: 5px;
+      font-weight: 700;
+      transition: background-color 0.3s;
+    }
+    nav .back-btn:hover {
+      background: #05264e;
+    }
+
+    /* Page content styles */
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 1rem;
+      color: #073763;
+      text-shadow: 0 1px 2px rgba(255 255 255 / 0.7);
+    }
+    #calendar, #upload-form, .gallery {
+      max-width: 900px;
+      background: #f9fbff;
+      margin: 2rem auto;
+      padding: 1rem 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgb(0 0 0 / 0.1);
+    }
+    #upload-form h2 {
+      margin-top: 0;
+      color: #073763;
+      text-align: center;
+    }
+    #upload-form input, #upload-form button {
+      width: 100%;
+      margin: 0.7rem 0;
+      padding: 0.6rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: 1.5px solid #a3c2f2;
+      outline-offset: 2px;
+      transition: border-color 0.3s;
+    }
+    #upload-form input:focus, #upload-form button:hover {
+      border-color: #073763;
+    }
+    #upload-form button {
+      background: #073763;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      transition: background-color 0.3s;
+    }
+    #upload-form button:hover {
+      background: #05264e;
+    }
+
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+    .gallery img {
+      width: 180px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+      transition: transform 0.2s ease;
+    }
+    .gallery img:hover {
+      transform: scale(1.07);
+      box-shadow: 0 6px 18px rgb(0 0 0 / 0.15);
+    }
+
+    .fullscreen {
+      position: fixed;
+      top: 60px; /* below nav */
+      left: 0;
+      width: 100vw;
+      height: calc(100vh - 60px);
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      display: none;
+      cursor: pointer;
+    }
+    .fullscreen img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 12px;
+      box-shadow: 0 0 25px rgba(255 255 255 0.8);
+      user-select: none;
+    }
+
+    /* WhatsApp button */
+    #whatsapp-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #25d366;
+      border-radius: 50px;
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s;
+      text-decoration: none;
+    }
+    #whatsapp-btn:hover {
+      background: #1ebe57;
+    }
+    #whatsapp-btn img {
+      width: 24px;
+      height: 24px;
+      filter: drop-shadow(0 0 0.2rem rgba(0,0,0,0.2));
+    }
+
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+</head>
+<body>
+  <nav>
+    <div class="logo"></div>
+    <img src="Untitled design (9).png" style="height: 100%;">
+    <ul>
+      <li onclick="scrollToSection('calendar')">Calendar</li>
+      <li onclick="scrollToSection('upload-form')">Upload Poster</li>
+      <li onclick="scrollToSection('gallery')">Gallery</li>
+    </ul>
+    <div class="back-btn" onclick="history.back()">← Back</div>
+  </nav>
+
+  <h1>📅 Content Calendar System</h1>
+
+  <div id="calendar"></div>
+
+  <form id="upload-form">
+    <h2>📤 Upload Poster</h2>
+    <input type="file" id="file" accept="image/*" />
+    <input type="date" id="date" />
+    <input type="text" id="caption" placeholder="Caption (optional)" />
+    <button type="submit">Upload</button>
+  </form>
+
+  <div class="gallery" id="gallery"></div>
+
+  <div class="fullscreen" id="fullscreen">
+    <img src="" alt="Full View" />
+  </div>
+
+  <a href="https://wa.me/254114318112?text=Hi%20I%20have%20a%20suggestion%20about%20the%20poster!" id="whatsapp-btn" target="_blank" rel="noopener noreferrer">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" />
+    Chat with us
+  </a>
+
+  <script>
+    const calendarEl = document.getElementById('calendar');
+    const galleryEl = document.getElementById('gallery');
+    const fullscreen = document.getElementById('fullscreen');
+    const fullImg = fullscreen.querySelector('img');
+    let calendar;
+    let posters = []; // store posters info for calendar linking
+
+    document.addEventListener('DOMContentLoaded', function () {
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: [],
+        dateClick: function(info) {
+          // Check if a poster exists for clicked date
+          const found = posters.find(p => p.date === info.dateStr);
+          if (found) {
+            fullImg.src = found.url;
+            fullscreen.style.display = 'flex';
+          } else {
+            alert("No poster for this date, my friend. Upload one and make the calendar pop!");
+          }
+        }
+      });
+      calendar.render();
+    });
+
+    document.getElementById('upload-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('file');
+      const dateInput = document.getElementById('date');
+      const captionInput = document.getElementById('caption');
+
+      const file = fileInput.files[0];
+      if (!file || !dateInput.value) {
+        alert('Please select a file and a date!');
+        return;
+      }
+
+      const url = URL.createObjectURL(file);
+      const caption = captionInput.value;
+
+      // Add image to gallery
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = caption;
+      img.title = caption;
+
+      img.addEventListener('click', () => {
+        fullImg.src = url;
+        fullscreen.style.display = 'flex';
+      });
+
+      galleryEl.appendChild(img);
+
+      // Add event to calendar
+      calendar.addEvent({
+        title: caption || file.name,
+        start: dateInput.value,
+      });
+
+      // Save poster info
+      posters.push({
+        date: dateInput.value,
+        url: url,
+        caption: caption,
+      });
+
+      // Reset form
+      fileInput.value = '';
+      dateInput.value = '';
+      captionInput.value = '';
+
+      alert("Poster uploaded and locked in! Check the gallery or calendar to see it shine ✨");
+    });
+
+    fullscreen.addEventListener('click', () => {
+      fullscreen.style.display = 'none';
+    });
+
+    function scrollToSection(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  </script>
+</body>
+</html>
